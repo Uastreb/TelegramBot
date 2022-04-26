@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -20,6 +21,8 @@ namespace TelegramBot
         private static string pathToDocWithResults = string.Empty;
         private static string pathToXmlWithUserPolls = string.Empty;
         private static string pathToXmlWithPoll = string.Empty;
+
+        private static CancellationTokenSource _updateDataCTS;
 
         private static Settings settings;
 
@@ -40,6 +43,9 @@ namespace TelegramBot
 
                 LoadUserPolls();
 
+                _updateDataCTS = new CancellationTokenSource();
+                Task.Run(() => UpdateData());
+
                 _telegramBotClient = new TelegramBotClient(token);
                 _telegramBotClient.StartReceiving();
                 _telegramBotClient.OnMessage += _telegramBotClient_OnMessage;
@@ -53,6 +59,7 @@ namespace TelegramBot
                 while (!string.Equals(text, "Cancel", StringComparison.OrdinalIgnoreCase));
 
                 _telegramBotClient.StopReceiving();
+                _updateDataCTS.Cancel();
 
                 SaveUserPolls();
             }
@@ -60,6 +67,29 @@ namespace TelegramBot
             {
                 Console.WriteLine($"Проиошла ошибка{Environment.NewLine}Проверьте правильно ли настроен файл настроек{Environment.NewLine}{Environment.NewLine}{ex}");
                 Console.ReadLine();
+            }
+        }
+
+        private static async Task UpdateData()
+        {
+            try
+            {
+                for(; ; )
+                {
+                    SaveUserPolls();
+
+                    LoadUserPolls();
+
+                    await Task.Delay(TimeSpan.FromHours(1));
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Бот остановлен.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Произошла ошибка при отправке письма\n{ex}");
             }
         }
 
@@ -78,7 +108,7 @@ namespace TelegramBot
                 };
 
                 _userPolls.Add(userPoll);
-                await SendTextMessageAsync(message.Chat.Id, _poll.Introduction);
+                await SendTextMessageAsync(message, _poll.Introduction);
             }
 
             userPoll = _userPolls.First(x => x.UserId == userId);
@@ -128,7 +158,7 @@ namespace TelegramBot
             var currentUserData = poll.UserDatas.FirstOrDefault(x => !x.ValueIsEntered);
             if (currentUserData != default && !currentUserData.TextIsSent)
             {
-                await SendTextMessageAsync(message.Chat.Id, currentUserData.Text);
+                await SendTextMessageAsync(message, currentUserData.Text);
                 currentUserData.TextIsSent = true;
 
                 return true;
@@ -157,7 +187,7 @@ namespace TelegramBot
             var nextUserData = poll.UserDatas.FirstOrDefault(x => !x.ValueIsEntered);
             if (nextUserData != default)
             {
-                await SendTextMessageAsync(message.Chat.Id, nextUserData.Text);
+                await SendTextMessageAsync(message, nextUserData.Text);
                 nextUserData.TextIsSent = true;
 
                 return true;
@@ -176,7 +206,7 @@ namespace TelegramBot
         {
             var nextQuestionGroup = poll.QuestionGroups.First(x => !x.IsPassed);
 
-            await SendTextMessageAsync(message.Chat.Id, nextQuestionGroup.Introduction);
+            await SendTextMessageAsync(message, nextQuestionGroup.Introduction);
             nextQuestionGroup.TextIsSent = true;
 
             _telegramBotClient_OnMessage(sender, e);
@@ -200,14 +230,14 @@ namespace TelegramBot
             var currentQuestionGroup = poll.QuestionGroups.FirstOrDefault(x => !x.IsPassed);
             if (currentQuestionGroup == default)
             {
-                await SendTextMessageAsync(message.Chat.Id, $"Вы уже прошли этот тест.");
+                await SendTextMessageAsync(message, $"Вы уже прошли этот тест.");
 
                 return default;
             }
 
             if (!currentQuestionGroup.TextIsSent && !string.IsNullOrEmpty(currentQuestionGroup.Introduction))
             {
-                await SendTextMessageAsync(message.Chat.Id, currentQuestionGroup.Introduction);
+                await SendTextMessageAsync(message, currentQuestionGroup.Introduction);
                 currentQuestionGroup.TextIsSent = true;
             }
 
@@ -226,7 +256,7 @@ namespace TelegramBot
             if (poll.QuestionGroups.All(x => x.IsPassed))
             {
                 await WriteResult(userPoll, poll, message);
-                await SendTextMessageAsync(message.Chat.Id, poll.Conclusion,
+                await SendTextMessageAsync(message, poll.Conclusion,
                     replyMarkup: new ReplyKeyboardRemove());
 
                 return true;
@@ -254,7 +284,7 @@ namespace TelegramBot
                 var nextQuestion = currentQuestionGroup.Questions.FirstOrDefault(x => !x.IsPassed);
                 var answerButtons = GetButtons(nextQuestion);
 
-                await SendTextMessageAsync(message.Chat.Id, nextQuestion.QuestionText, replyMarkup: answerButtons);
+                await SendTextMessageAsync(message, nextQuestion.QuestionText, replyMarkup: answerButtons);
                 nextQuestion.TextIsSent = true;
 
                 return true;
@@ -286,7 +316,7 @@ namespace TelegramBot
             {
                 var answerButtons = GetButtons(currentQuestion);
 
-                await SendTextMessageAsync(message.Chat.Id, currentQuestion.QuestionText, replyMarkup: answerButtons);
+                await SendTextMessageAsync(message, currentQuestion.QuestionText, replyMarkup: answerButtons);
                 currentQuestion.TextIsSent = true;
 
                 return default;
@@ -298,15 +328,42 @@ namespace TelegramBot
             return currentQuestion;
         }
 
+        private static async Task SendTextMessageAsync(Telegram.Bot.Types.Message message, string text, IReplyMarkup replyMarkup = default)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(text) && replyMarkup != default)
+                {
+                    await _telegramBotClient.SendTextMessageAsync(message.Chat.Id, text, replyMarkup: replyMarkup);
+                }
+                else if (!string.IsNullOrEmpty(text) && replyMarkup == default)
+                {
+                    await _telegramBotClient.SendTextMessageAsync(message.Chat.Id, text);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Произошла ошибка при отправке письма\nЧат:{message.Chat.Id}\nТип:{message.Chat.Type}\nПисьмо от, логин:{message.From.Username}\n" +
+                    $"Письмо от, иф:{message.From.FirstName} {message.From.LastName}\n{ex}");
+            }
+        }
+
         private static async Task SendTextMessageAsync(long chatId, string text, IReplyMarkup replyMarkup = default)
         {
-            if (!string.IsNullOrEmpty(text) && replyMarkup != default)
+            try
             {
-                await _telegramBotClient.SendTextMessageAsync(chatId, text, replyMarkup: replyMarkup);
+                if (!string.IsNullOrEmpty(text) && replyMarkup != default)
+                {
+                    await _telegramBotClient.SendTextMessageAsync(chatId, text, replyMarkup: replyMarkup);
+                }
+                else if (!string.IsNullOrEmpty(text) && replyMarkup == default)
+                {
+                    await _telegramBotClient.SendTextMessageAsync(chatId, text);
+                }
             }
-            else if (!string.IsNullOrEmpty(text) && replyMarkup == default)
+            catch (Exception ex)
             {
-                await _telegramBotClient.SendTextMessageAsync(chatId, text);
+                Console.WriteLine($"Произошла ошибка при отправке письма администратору \nЧат:{chatId}\n{ex}");
             }
         }
 
@@ -385,11 +442,14 @@ namespace TelegramBot
         {
             var userPolls = XmlSerializationHelper<UserPoll[]>.DeserializeFromFile(pathToXmlWithUserPolls);
 
-            _userPolls = userPolls.ToList();
-
-            if (_userPolls == default)
+            lock (_userPolls)
             {
-                _userPolls = new List<UserPoll>();
+                _userPolls = userPolls.ToList();
+
+                if (_userPolls == default)
+                {
+                    _userPolls = new List<UserPoll>();
+                }
             }
         }
     }
