@@ -1,0 +1,11 @@
+﻿<?xml version="1.0"?>
+<Settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ApiId>14673538</ApiId>
+  <ApiHash>7e02a00dd3fc8cec89ea37a2b85cdb53</ApiHash>
+  <PhoneNumber>+375291251234</PhoneNumber>
+  <IdChatToPaste>1798837034</IdChatToPaste>
+  <KeyWords>
+    <string>слово</string>
+    <string>бывает</string>
+  </KeyWords>
+</Settings>
