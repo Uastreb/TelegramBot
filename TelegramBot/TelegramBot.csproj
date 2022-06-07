@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Apis.Sheets.v4" Version="1.57.0.2657" />
     <PackageReference Include="Telegram.Bot" Version="16.0.2" />
   </ItemGroup>
 
@@ -16,6 +17,9 @@
   <ItemGroup>
     <None Update="Settings.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="telegrambot-settings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

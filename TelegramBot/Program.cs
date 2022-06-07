@@ -22,6 +22,8 @@ namespace TelegramBot
         private static string pathToXmlWithUserPolls = string.Empty;
         private static string pathToXmlWithPoll = string.Empty;
 
+        private static GoogleSheetService _googleSheetService;
+
         private static CancellationTokenSource _updateDataCTS;
 
         private static Settings settings;
@@ -33,6 +35,13 @@ namespace TelegramBot
             try
             {
                 settings = XmlSerializationHelper<Settings>.DeserializeFromFile(@"Settings.xml");
+
+                if (!string.IsNullOrEmpty(settings.GoogleSheetsAppName) &&
+                    !string.IsNullOrEmpty(settings.GoogleSpreadsheetId) &&
+                    File.Exists("telegrambot-settings.json"))
+                {
+                    _googleSheetService = new GoogleSheetService(settings.GoogleSheetsAppName, settings.GoogleSpreadsheetId);
+                }
 
                 token = settings.Token;
                 pathToDocWithResults = settings.PathToDocWithResults;
@@ -74,7 +83,7 @@ namespace TelegramBot
         {
             try
             {
-                for(; ; )
+                for (; ; )
                 {
                     SaveUserPolls();
 
@@ -424,6 +433,13 @@ namespace TelegramBot
             {
                 await SendTextMessageAsync(settings.AdminChatId.Value, resultText);
             }
+
+            if (_googleSheetService != null && userPoll != default)
+            {
+                var googleSheetsResult = GetResultForGoogleSheet(userPoll);
+
+                _googleSheetService.WriteData(googleSheetsResult, _userPolls.Count + 2);
+            }
         }
 
         private static void SaveUserPolls()
@@ -451,6 +467,100 @@ namespace TelegramBot
                     _userPolls = new List<UserPoll>();
                 }
             }
+
+            if (_googleSheetService != null && _userPolls != default && _userPolls.Any())
+            {
+                var googleSheetsResults = GetResultsForGoogleSheet(_userPolls);
+                var googleSheetsTitles = GetTitlesForGoogleSheet(_userPolls);
+
+                _googleSheetService.WriteData(googleSheetsTitles, 1);
+                _googleSheetService.WriteData(googleSheetsResults, 2);
+            }
+        }
+
+        private static IList<IList<object>> GetResultsForGoogleSheet(List<UserPoll> userPolls)
+        {
+            var googleSheetRows = new List<IList<object>>();
+
+            foreach (var userPoll in userPolls)
+            {
+                double totalResult = 0;
+                var googleSheetColumns = new List<object>();
+
+                googleSheetColumns.Add(userPoll.UserId);
+
+                foreach (var userData in userPoll.Poll.UserDatas)
+                {
+                    googleSheetColumns.Add(userData.Value);
+                }
+
+                foreach (var questionGroup in userPoll.Poll.QuestionGroups)
+                {
+                    var groupAverage = questionGroup.Questions.Average(x => x.PointsReceived);
+                    googleSheetColumns.Add($"{groupAverage} балла(ов)");
+                    totalResult += groupAverage;
+                }
+
+                totalResult /= userPoll.Poll.QuestionGroups.Count();
+                googleSheetColumns.Add($"{totalResult} балла(ов)");
+
+                googleSheetRows.Add(googleSheetColumns);
+            }
+
+            return googleSheetRows;
+        }
+
+        private static IList<IList<object>> GetResultForGoogleSheet(UserPoll userPoll)
+        {
+            var googleSheetRows = new List<IList<object>>();
+
+            double totalResult = 0;
+            var googleSheetColumns = new List<object>();
+
+            foreach (var userData in userPoll.Poll.UserDatas)
+            {
+                googleSheetColumns.Add(userData.Value);
+            }
+
+            foreach (var questionGroup in userPoll.Poll.QuestionGroups)
+            {
+                var groupAverage = questionGroup.Questions.Average(x => x.PointsReceived);
+                googleSheetColumns.Add($"{groupAverage} балла(ов)");
+                totalResult += groupAverage;
+            }
+
+            totalResult /= userPoll.Poll.QuestionGroups.Count();
+            googleSheetColumns.Add($"{totalResult} балла(ов)");
+
+            googleSheetRows.Add(googleSheetColumns);
+
+            return googleSheetRows;
+        }
+
+        private static IList<IList<object>> GetTitlesForGoogleSheet(List<UserPoll> userPolls)
+        {
+            var googleSheetRows = new List<IList<object>>();
+
+            var firstUserPoll = userPolls.First();
+            var googleSheetColumns = new List<object>();
+
+            googleSheetColumns.Add("Id пользователя");
+
+            foreach (var userData in firstUserPoll.Poll.UserDatas)
+            {
+                googleSheetColumns.Add(userData.Name);
+            }
+
+            foreach (var questionGroup in firstUserPoll.Poll.QuestionGroups)
+            {
+                googleSheetColumns.Add($"Кол-во баллов по группе {questionGroup.GroupName}");
+            }
+
+            googleSheetColumns.Add($"Среднее по всем группам");
+
+            googleSheetRows.Add(googleSheetColumns);
+
+            return googleSheetRows;
         }
     }
 }

@@ -11,5 +11,9 @@ namespace TelegramBot.Entity
         public string PathToDocWithResults { get; set; }
         public string PathToXmlWithUserPolls { get; set; }
         public string PathToXmlWithPoll { get; set; }
+
+
+        public string GoogleSheetsAppName { get; set; }
+        public string GoogleSpreadsheetId { get; set; }
     }
 }
