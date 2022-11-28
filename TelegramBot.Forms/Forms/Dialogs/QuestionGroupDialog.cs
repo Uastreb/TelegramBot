@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Linq;
+using TelegramBot.Forms.Models;
+using System.Collections.Generic;
 
 namespace TelegramBot.Forms.Forms.Dialogs
 {
@@ -29,6 +31,30 @@ namespace TelegramBot.Forms.Forms.Dialogs
                 var introductionText = TextDialog.Show("Добавление вступления", introductionTextNode.Text);
 
                 introductionTextNode.Text = introductionText;
+            }
+
+            if (questionGroupTreeView.SelectedNode.Parent?.Name == "Questions")
+            {
+                var awnswers = new List<Answer>();
+                foreach(TreeNode answersNode in questionGroupTreeView.SelectedNode.LastNode.Nodes)
+                {
+                    awnswers.Add(new Answer
+                    {
+                        AnswerOption = answersNode.Text,
+                        AnswerPoints = double.Parse(answersNode.FirstNode.Text)
+                    });
+                }
+
+                var question = QuestionDialog.Show(questionGroupTreeView.SelectedNode.FirstNode.Text, awnswers);
+
+                questionGroupTreeView.SelectedNode.FirstNode.Text = question.QuestionText;
+                questionGroupTreeView.SelectedNode.LastNode.Nodes.Clear();
+
+                foreach(var answer in question.AnswerOptions)
+                {
+                    questionGroupTreeView.SelectedNode.LastNode.Nodes.Add(answer.AnswerOption);
+                    questionGroupTreeView.SelectedNode.LastNode.LastNode.Nodes.Add(answer.AnswerPoints.ToString());
+                }
             }
         }
 
@@ -64,6 +90,15 @@ namespace TelegramBot.Forms.Forms.Dialogs
                 return;
             }
 
+            if (e.Node.Parent?.Name == "Questions")
+            {
+                deleteNodeButton.Enabled = true;
+                addNodeButton.Enabled = true;
+                editNodeButton.Enabled = true;
+
+                return;
+            }
+
             editNodeButton.Enabled = false;
             addNodeButton.Enabled = false;
             deleteNodeButton.Enabled = false;
@@ -74,38 +109,67 @@ namespace TelegramBot.Forms.Forms.Dialogs
             this.Close();
         }
 
-        public static void Show()
+        public static GroupQuestions Show(TreeNode defaultQuestionGroupNode = default)
         {
             var questionGroupDialog = new QuestionGroupDialog();
 
-            //textWithNameDialog.nameTextBox.Text = defaultName;
-            //textWithNameDialog.valueTextBox.Text = defaultValue;
+            if (defaultQuestionGroupNode != default)
+            {
+                foreach (TreeNode childQuestionGroupNode in defaultQuestionGroupNode.Nodes)
+                {
+                    questionGroupDialog.questionGroupTreeView.Nodes.Add((TreeNode)childQuestionGroupNode.Clone());
+                }
+            }
+
             questionGroupDialog.ShowDialog();
 
-            //return new UserData()
-            //{
-            //    Name = textWithNameDialog.nameTextBox.Text,
-            //    Text = textWithNameDialog.valueTextBox.Text
-            //};
+            var questionGroupNode = new TreeNode();
+            foreach (TreeNode childQuestionGroupNode in questionGroupDialog.questionGroupTreeView.Nodes)
+            {
+                questionGroupNode.Nodes.Add((TreeNode)childQuestionGroupNode.Clone());
+            }
+
+            return questionGroupNode;
         }
 
         private void addNodeButton_Click(object sender, EventArgs e)
         {
-            if (questionGroupTreeView.SelectedNode.Name == "Questions" || 
+            if (questionGroupTreeView.SelectedNode.Name == "Questions" ||
                 questionGroupTreeView.SelectedNode.Parent?.Name == "Questions")
             {
-                var question = QuestionDialog.Show();
-                var selectedNode = questionGroupTreeView.SelectedNode.Name == "Questions" ? questionGroupTreeView.SelectedNode : questionGroupTreeView.SelectedNode.Parent;
+                var newQuestion = QuestionDialog.Show();
+                var questionGroupNode = questionGroupTreeView.Nodes["Questions"];
 
-                var newQuestionNode = selectedNode.Nodes.Add($"Вопрос {selectedNode.Nodes.Count}");
-                foreach(TreeNode questionNode in question)
+                var newQuestionNode = new TreeNode();
+                newQuestionNode.Nodes.Add("Question", newQuestion.QuestionText);
+                newQuestionNode.Nodes.Add("AnswerOptions", "Ответы");
+
+                foreach (var answer in newQuestion.AnswerOptions)
                 {
-                    newQuestionNode.Nodes.Add((TreeNode)questionNode.Clone());
+                    newQuestionNode.Nodes["AnswerOptions"].Nodes.Add(answer.AnswerOption);
+                    newQuestionNode.Nodes["AnswerOptions"].LastNode.Nodes.Add(answer.AnswerPoints.ToString());
                 }
-                //var questionNode = selectedNode.Nodes.Add(question.QuestionText);
-                //question.A
 
-                //userDataNode.Nodes.Add(userData.Text);
+                questionGroupNode.Nodes.Add(newQuestionNode);
+                UpdateQuestionNames();
+            }
+        }
+
+        private void deleteNodeButton_Click(object sender, EventArgs e)
+        {
+            if (questionGroupTreeView.SelectedNode.Parent?.Name == "Questions")
+            {
+                questionGroupTreeView.SelectedNode.Remove();
+                UpdateQuestionNames();
+            }
+        }
+
+        private void UpdateQuestionNames()
+        {
+            var counter = 1;
+            foreach (TreeNode questionGroupChildNode in questionGroupTreeView.Nodes["Questions"].Nodes)
+            {
+                questionGroupChildNode.Text = $"Вопрос {counter++}";
             }
         }
     }

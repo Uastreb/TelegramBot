@@ -58,6 +58,7 @@ namespace TelegramBot.Forms.Forms.Dialogs
             this.deleteNodeButton.TabIndex = 11;
             this.deleteNodeButton.Text = "Удалить";
             this.deleteNodeButton.UseVisualStyleBackColor = true;
+            this.deleteNodeButton.Click += new System.EventHandler(this.deleteNodeButton_Click);
             // 
             // addNodeButton
             // 
@@ -77,6 +78,7 @@ namespace TelegramBot.Forms.Forms.Dialogs
             this.editNodeButton.TabIndex = 9;
             this.editNodeButton.Text = "Изменить";
             this.editNodeButton.UseVisualStyleBackColor = true;
+            this.editNodeButton.Click += new System.EventHandler(this.editNodeButton_Click);
             // 
             // questionTreeView
             // 

@@ -74,6 +74,7 @@ namespace TelegramBot.Forms.Forms.Dialogs
             this.deleteNodeButton.TabIndex = 6;
             this.deleteNodeButton.Text = "Удалить";
             this.deleteNodeButton.UseVisualStyleBackColor = true;
+            this.deleteNodeButton.Click += new System.EventHandler(this.deleteNodeButton_Click);
             // 
             // addNodeButton
             // 

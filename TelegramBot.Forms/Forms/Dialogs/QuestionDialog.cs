@@ -32,6 +32,72 @@ namespace TelegramBot.Forms.Forms.Dialogs
             }
         }
 
+        private void editNodeButton_Click(object sender, EventArgs e)
+        {
+            TreeNode answerOptionNode;
+            if (questionTreeView.SelectedNode.Parent?.Name == "AnswerOptions")
+            {
+                answerOptionNode = questionTreeView.SelectedNode;
+            }
+            else if (questionTreeView.SelectedNode.Parent?.Parent?.Name == "AnswerOptions")
+            {
+                answerOptionNode = questionTreeView.SelectedNode.Parent;
+            }
+            else if (questionTreeView.SelectedNode.Name == "Question")
+            {
+                var questionTextNode = questionTreeView.SelectedNode.FirstNode;
+                var questionText = TextDialog.Show("Добавление вопроса", questionTextNode.Text);
+                questionTextNode.Text = questionText;
+
+                return;
+            }
+            else if (questionTreeView.SelectedNode.Parent.Name == "Question")
+            {
+                var questionTextNode = questionTreeView.SelectedNode.Parent.FirstNode;
+                var questionText = TextDialog.Show("Добавление вопроса", questionTextNode.Text);
+                questionTextNode.Text = questionText;
+
+                return;
+            }
+            else
+            {
+                return;
+            }
+
+            var answerOptionText = answerOptionNode.Text;
+
+            var answerPointsNode = answerOptionNode.FirstNode;
+            var answerPoints = int.Parse(answerPointsNode.Text);
+
+            var answerOption = AnswerOptionDialog.Show(answerPoints, answerOptionText);
+            if (answerOption == default)
+            {
+                return;
+            }
+
+            answerOptionNode.Text = answerOption.AnswerOption;
+            answerOptionNode.FirstNode.Text = answerOption.AnswerPoints.ToString();
+        }
+
+        private void deleteNodeButton_Click(object sender, EventArgs e)
+        {
+            TreeNode answerOptionNode;
+            if (questionTreeView.SelectedNode.Parent?.Name == "AnswerOptions")
+            {
+                answerOptionNode = questionTreeView.SelectedNode;
+            }
+            else if (questionTreeView.SelectedNode.Parent?.Parent?.Name == "AnswerOptions")
+            {
+                answerOptionNode = questionTreeView.SelectedNode.Parent;
+            }
+            else
+            {
+                return;
+            }
+
+            answerOptionNode.Remove();
+        }
+
         private void questionTreeView_BeforeSelect(object sender, TreeViewCancelEventArgs e)
         {
             if (e.Node.Name == "Question" || e.Node.Parent?.Name == "Question")
@@ -54,50 +120,56 @@ namespace TelegramBot.Forms.Forms.Dialogs
                 return;
             }
 
+            if (e.Node.Parent.Name == "AnswerOptions" || e.Node.Parent.Parent.Name == "AnswerOptions")
+            {
+                deleteNodeButton.Enabled = true;
+                editNodeButton.Enabled = true;
+                addNodeButton.Enabled = true;
+
+                return;
+            }
+
             editNodeButton.Enabled = false;
             addNodeButton.Enabled = false;
             deleteNodeButton.Enabled = false;
         }
 
-        public static TreeNodeCollection Show(string defaultQuestion = default, Dictionary<string, int> defaultAnswerOptions = default)
+        public static Question Show(string defaultQuestionText = default, List<Answer> defaultAnswers = default)
         {
             var questionDialog = new QuestionDialog();
 
-            //questionDialog.questionTreeView.Nodes["Question"].Nodes["QuestionText"].Text = defaultQuestion;
+            if (defaultQuestionText != default && defaultAnswers != default)
+            {
+                questionDialog.questionTreeView.Nodes["Question"].FirstNode.Text = defaultQuestionText;
 
-            //var answerOptionsNodes = questionDialog.questionTreeView.Nodes["AnswerOptions"];
-
-            //foreach (var defaultAnswerOption in defaultAnswerOptions)
-            //{
-            //    var answerOptionNode = answerOptionsNodes.Nodes.Add(defaultAnswerOption.Key);
-            //    answerOptionNode.Nodes.Add(defaultAnswerOption.Value.ToString());
-            //}
+                foreach(var answer in defaultAnswers)
+                {
+                    var answerNode = new TreeNode(answer.AnswerOption);
+                    answerNode.Nodes.Add(answer.AnswerPoints.ToString());
+                    questionDialog.questionTreeView.Nodes["AnswerOptions"].Nodes.Add(answerNode);
+                }
+            }
 
             questionDialog.ShowDialog();
 
+            var question = new Question
+            {
+                QuestionText = questionDialog.questionTreeView.Nodes["Question"].FirstNode.Text
+            };
 
-            //var answerOptions = new List<Answer>();
+            var answers = new List<Answer>();
+            foreach (TreeNode answerNode in questionDialog.questionTreeView.Nodes["AnswerOptions"].Nodes)
+            {
+                answers.Add(new Answer()
+                {
+                     AnswerOption = answerNode.Text,
+                     AnswerPoints = int.Parse(answerNode.FirstNode.Text)
+                });
+            }
 
-            //foreach(TreeNode answerOptionNode in questionDialog.questionTreeView.Nodes["AnswerOptions"].Nodes)
-            //{
-            //    var answerOption = new Answer()
-            //    {
-            //        AnswerOption = answerOptionNode.Text,
-            //        AnswerPoints = int.Parse(answerOptionNode.Nodes[0].Text)
-            //    };
+            question.AnswerOptions = answers.ToArray();
 
-            //    answerOptions.Add(answerOption);
-            //}
-
-            //var question = new Question()
-            //{
-            //    QuestionText = questionDialog.questionTreeView.Nodes["Question"].Nodes["QuestionText"].Text,
-            //    AnswerOptions = answerOptions.ToArray()
-            //};
-
-            //return question;
-
-            return questionDialog.questionTreeView.Nodes;
+            return question;
         }
 
         private void saveButton_Click(object sender, EventArgs e)

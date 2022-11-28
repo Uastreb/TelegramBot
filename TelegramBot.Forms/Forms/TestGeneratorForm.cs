@@ -51,7 +51,8 @@ namespace TelegramBot.Forms
 
             if (testTreeView.SelectedNode.Name == "QuestionGroups")
             {
-                QuestionGroupDialog.Show();
+                var questionGroupNode = QuestionGroupDialog.Show();
+                testTreeView.SelectedNode.Nodes.Add(questionGroupNode);
             }
         }
 
