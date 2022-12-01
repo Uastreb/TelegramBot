@@ -109,28 +109,28 @@ namespace TelegramBot.Forms.Forms.Dialogs
             this.Close();
         }
 
-        public static GroupQuestions Show(TreeNode defaultQuestionGroupNode = default)
-        {
-            var questionGroupDialog = new QuestionGroupDialog();
+        //public static GroupQuestions Show(TreeNode defaultQuestionGroupNode = default)
+        //{
+        //    var questionGroupDialog = new QuestionGroupDialog();
 
-            if (defaultQuestionGroupNode != default)
-            {
-                foreach (TreeNode childQuestionGroupNode in defaultQuestionGroupNode.Nodes)
-                {
-                    questionGroupDialog.questionGroupTreeView.Nodes.Add((TreeNode)childQuestionGroupNode.Clone());
-                }
-            }
+        //    if (defaultQuestionGroupNode != default)
+        //    {
+        //        foreach (TreeNode childQuestionGroupNode in defaultQuestionGroupNode.Nodes)
+        //        {
+        //            questionGroupDialog.questionGroupTreeView.Nodes.Add((TreeNode)childQuestionGroupNode.Clone());
+        //        }
+        //    }
 
-            questionGroupDialog.ShowDialog();
+        //    questionGroupDialog.ShowDialog();
 
-            var questionGroupNode = new TreeNode();
-            foreach (TreeNode childQuestionGroupNode in questionGroupDialog.questionGroupTreeView.Nodes)
-            {
-                questionGroupNode.Nodes.Add((TreeNode)childQuestionGroupNode.Clone());
-            }
+        //    var questionGroupNode = new TreeNode();
+        //    foreach (TreeNode childQuestionGroupNode in questionGroupDialog.questionGroupTreeView.Nodes)
+        //    {
+        //        questionGroupNode.Nodes.Add((TreeNode)childQuestionGroupNode.Clone());
+        //    }
 
-            return questionGroupNode;
-        }
+        //    return questionGroupNode;
+        //}
 
         private void addNodeButton_Click(object sender, EventArgs e)
         {
