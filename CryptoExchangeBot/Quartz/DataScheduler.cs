@@ -86,7 +86,7 @@ namespace CryptoExchangeBot.Quartz
 
         private static async Task ScheduleFinishedMessageJob(CancellationToken cancellationToken)
         {
-            if (_settings.FinishedMessageDate > DateTime.Now)
+            if (_settings.FinishedMessageDate < DateTime.Now)
             {
                 return;
             }

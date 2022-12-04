@@ -37,8 +37,7 @@ namespace CryptoExchangeBot.Quartz.Jobs
                 {
                     try
                     {
-                        var button = TgBotHelper.GetButton(_textSettings.ButtonShare);
-                        await _botClient.SendTextMessageAsync(new ChatId(user.ChatId), _textSettings.DailyMorningMessage, replyMarkup: button);
+                        await _botClient.SendTextMessageAsync(new ChatId(user.ChatId), _textSettings.DailyMorningMessage);
                     }
                     catch (Exception ex)
                     {
