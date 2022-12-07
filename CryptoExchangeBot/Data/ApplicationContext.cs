@@ -16,7 +16,7 @@ namespace CryptoExchangeBot.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            
+            modelBuilder.Entity<DailyEarning>().HasKey(nameof(DailyEarning.ChatId), nameof(DailyEarning.DateCreated));
         }
 
     }
