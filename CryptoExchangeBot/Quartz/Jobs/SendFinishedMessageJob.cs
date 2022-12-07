@@ -7,6 +7,7 @@ using Telegram.Bot;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using ILogger = Serilog.ILogger;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace CryptoExchangeBot.Quartz.Jobs
 {
@@ -40,7 +41,7 @@ namespace CryptoExchangeBot.Quartz.Jobs
                     {
                         var points = await dbContext.DailyEarnings.CountAsync(x => x.ChatId == user.ChatId && x.Amount.HasValue);
 
-                        await _botClient.SendTextMessageAsync(new ChatId(user.ChatId), string.Format(_textSettings.FinishedMesage, points));
+                        await _botClient.SendTextMessageAsync(new ChatId(user.ChatId), string.Format(_textSettings.FinishedMesage, points), replyMarkup: new ReplyKeyboardRemove());
                     }
                     catch(Exception ex)
                     {
