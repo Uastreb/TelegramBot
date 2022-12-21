@@ -112,7 +112,14 @@ namespace CryptoExchangeBot
                         return;
                     }
 
+                    var dailyMessageExecutedDate = await DataScheduler.GetDailyEveningTriggerPreviousFireTime();
                     var dailyEarning = await context.DailyEarnings.FirstOrDefaultAsync(x => x.ChatId == message.Chat.Id && x.DateCreated.Date == DateTime.Today);
+                    if (dailyEarning == default && message.Text.Equals(_textSettings.ButtonShare) && DateTime.Now.Date == dailyMessageExecutedDate.Date)
+                    {
+                        await botClient.SendTextMessageAsync(message.Chat, _textSettings.DailyCommentTimeExpired, replyMarkup: new ReplyKeyboardRemove());
+                        return;
+                    }
+                    
                     if (dailyEarning == default && message.Text.Equals(_textSettings.ButtonShare))
                     {
                         await HandleShareMessage(botClient, context, message);
