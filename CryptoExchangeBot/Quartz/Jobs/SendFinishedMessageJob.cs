@@ -40,8 +40,9 @@ namespace CryptoExchangeBot.Quartz.Jobs
                     try
                     {
                         var points = await dbContext.DailyEarnings.CountAsync(x => x.ChatId == user.ChatId && x.Amount.HasValue);
+                        var summary = await dbContext.DailyEarnings.Where(x => x.Amount.HasValue).SumAsync(x => x.Amount);
 
-                        await _botClient.SendTextMessageAsync(new ChatId(user.ChatId), string.Format(_textSettings.FinishedMesage, points), replyMarkup: new ReplyKeyboardRemove());
+                        await _botClient.SendTextMessageAsync(new ChatId(user.ChatId), string.Format(_textSettings.FinishedMesage, summary, points), replyMarkup: new ReplyKeyboardRemove());
                     }
                     catch(Exception ex)
                     {
