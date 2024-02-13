@@ -24,5 +24,6 @@
 
         public string IncorrectAmountResponse { get; set; }
         public string IncorrectResponse { get; set; }
+        public string DailyCommentTimeExpired { get; set; }
     }
 }

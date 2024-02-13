@@ -45,11 +45,11 @@ namespace CryptoExchangeBot.Quartz.Jobs
                         dateRow.AddRange(userDailyEarnings.Select(x => x.DateCreated.ToShortDateString()));
 
                         var amountRow = new List<object>();
-                        amountRow.Add("Сумма");
+                        amountRow.Add("Кол-во баллов");
                         amountRow.AddRange(userDailyEarnings.Select(x => x.Amount.HasValue ? x.Amount.ToString() : String.Empty));
 
                         var commentRow = new List<object>();
-                        commentRow.Add("Комментарий");
+                        commentRow.Add(userDailyEarnings.Count(x => x.Amount.HasValue));
                         commentRow.AddRange(userDailyEarnings.Select(x => x.Comment));
 
                         speedSheets.Add(dateRow);

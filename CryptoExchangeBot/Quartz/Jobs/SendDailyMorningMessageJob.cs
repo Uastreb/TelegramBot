@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Quartz;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 using ILogger = Serilog.ILogger;
 
 namespace CryptoExchangeBot.Quartz.Jobs
@@ -37,7 +38,7 @@ namespace CryptoExchangeBot.Quartz.Jobs
                 {
                     try
                     {
-                        await _botClient.SendTextMessageAsync(new ChatId(user.ChatId), _textSettings.DailyMorningMessage);
+                        await _botClient.SendTextMessageAsync(new ChatId(user.ChatId), _textSettings.DailyMorningMessage, replyMarkup: new ReplyKeyboardRemove());
                     }
                     catch (Exception ex)
                     {

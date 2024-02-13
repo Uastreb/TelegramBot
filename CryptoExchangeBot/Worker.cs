@@ -112,7 +112,14 @@ namespace CryptoExchangeBot
                         return;
                     }
 
+                    var dailyMessageExecutedDate = await DataScheduler.GetDailyEveningTriggerPreviousFireTime();
                     var dailyEarning = await context.DailyEarnings.FirstOrDefaultAsync(x => x.ChatId == message.Chat.Id && x.DateCreated.Date == DateTime.Today);
+                    if (dailyEarning == default && message.Text.Equals(_textSettings.ButtonShare) && DateTime.Now.Date == dailyMessageExecutedDate.Date)
+                    {
+                        await botClient.SendTextMessageAsync(message.Chat, _textSettings.DailyCommentTimeExpired, replyMarkup: new ReplyKeyboardRemove());
+                        return;
+                    }
+                    
                     if (dailyEarning == default && message.Text.Equals(_textSettings.ButtonShare))
                     {
                         await HandleShareMessage(botClient, context, message);
@@ -131,7 +138,7 @@ namespace CryptoExchangeBot
                         return;
                     }
 
-                    await botClient.SendTextMessageAsync(message.Chat, _textSettings.IncorrectResponse);
+                    await botClient.SendTextMessageAsync(message.Chat, _textSettings.IncorrectResponse, replyMarkup: new ReplyKeyboardRemove());
                 }
             }
             catch (Exception ex)
@@ -158,7 +165,7 @@ namespace CryptoExchangeBot
                 }
                 else
                 {
-                    await botClient.SendTextMessageAsync(message.Chat, greeting);
+                    await botClient.SendTextMessageAsync(message.Chat, greeting, replyMarkup: new ReplyKeyboardRemove());
                 }
             }
         }
@@ -182,7 +189,7 @@ namespace CryptoExchangeBot
             context.Users.Update(user);
             await context.SaveChangesAsync();
 
-            await botClient.SendTextMessageAsync(message.Chat, _textSettings.PhoneRequest);
+            await botClient.SendTextMessageAsync(message.Chat, _textSettings.PhoneRequest, replyMarkup: new ReplyKeyboardRemove());
         }
 
         //Обрабатывает ввод телефона
@@ -192,7 +199,7 @@ namespace CryptoExchangeBot
             context.Users.Update(user);
             await context.SaveChangesAsync();
 
-            await botClient.SendTextMessageAsync(message.Chat, _textSettings.NicknameRequest);
+            await botClient.SendTextMessageAsync(message.Chat, _textSettings.NicknameRequest, replyMarkup: new ReplyKeyboardRemove());
         }
 
         //Обрабатывает ввод никнейма
@@ -202,7 +209,7 @@ namespace CryptoExchangeBot
             context.Users.Update(user);
             await context.SaveChangesAsync();
 
-            await botClient.SendTextMessageAsync(message.Chat, _textSettings.DataSuccessfullyAdded);
+            await botClient.SendTextMessageAsync(message.Chat, _textSettings.DataSuccessfullyAdded, replyMarkup: new ReplyKeyboardRemove());
         }
 
         //Обрабатывает нажатие кнопки Поделится
@@ -229,12 +236,12 @@ namespace CryptoExchangeBot
                 context.DailyEarnings.Update(dailyEarning);
                 await context.SaveChangesAsync();
 
-                await botClient.SendTextMessageAsync(message.Chat, _textSettings.DailyCommentRequest);
+                await botClient.SendTextMessageAsync(message.Chat, _textSettings.DailyCommentRequest, replyMarkup: new ReplyKeyboardRemove());
             }
             else
             {
-                await botClient.SendTextMessageAsync(message.Chat, _textSettings.IncorrectAmountResponse);
-                await botClient.SendTextMessageAsync(message.Chat, _textSettings.DailyAmountRequest);
+                await botClient.SendTextMessageAsync(message.Chat, _textSettings.IncorrectAmountResponse, replyMarkup: new ReplyKeyboardRemove());
+                await botClient.SendTextMessageAsync(message.Chat, _textSettings.DailyAmountRequest, replyMarkup: new ReplyKeyboardRemove());
             }
         }
 
@@ -247,11 +254,11 @@ namespace CryptoExchangeBot
                 context.DailyEarnings.Update(dailyEarning);
                 await context.SaveChangesAsync();
 
-                await botClient.SendTextMessageAsync(message.Chat, _textSettings.DailyDateSucesfullyAdded);
+                await botClient.SendTextMessageAsync(message.Chat, _textSettings.DailyDateSucesfullyAdded, replyMarkup: new ReplyKeyboardRemove());
             }
             else
             {
-                await botClient.SendTextMessageAsync(message.Chat, _textSettings.DailyEarningAlreadyExists);
+                await botClient.SendTextMessageAsync(message.Chat, _textSettings.DailyEarningAlreadyExists, replyMarkup: new ReplyKeyboardRemove());
             }
         }
     }

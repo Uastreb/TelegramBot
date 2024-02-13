@@ -42,7 +42,7 @@ namespace CryptoExchangeBot.Quartz
                 .WithIdentity("SendDailyMorningMessageTrigger", "DailyMorningMessage")
                 .StartNow();
 
-            if(_settings.DateStart > DateTime.Now)
+            if (_settings.DateStart > DateTime.Now)
             {
                 triggerBuilder.StartAt(_settings.DateStart);
             }
@@ -127,6 +127,18 @@ namespace CryptoExchangeBot.Quartz
                 .Build();
 
             await _scheduler.ScheduleJob(job, trigger, cancellationToken);
+        }
+
+        /// <summary>
+        /// Получаем предыдущее время выполнения тригера
+        /// </summary>
+        /// <returns>Предыдущее время выполнения тригера</returns>
+        public static async Task<DateTime> GetDailyEveningTriggerPreviousFireTime()
+        {
+            var dailyEveningTrigger = await _scheduler.GetTrigger(new TriggerKey("DailyEveningMessage", "SendDailyEveningMessageTrigger"));
+            var previousFireTimeUtc = dailyEveningTrigger.GetPreviousFireTimeUtc().Value.ToLocalTime().DateTime;
+
+            return previousFireTimeUtc;
         }
     }
 }
