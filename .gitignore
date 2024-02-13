@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/CryptoExchangeBot/appsettings.json
+/TelegramBot/telegrambot-settings.json
+/TelegramBot.KeyWords/Settings.xml
+/TelegramClient.KeyWords/Settings.xml
